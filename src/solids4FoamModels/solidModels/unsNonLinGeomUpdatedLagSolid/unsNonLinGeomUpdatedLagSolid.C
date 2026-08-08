@@ -236,9 +236,6 @@ unsNonLinGeomUpdatedLagSolid::unsNonLinGeomUpdatedLagSolid
 
         Ff_.storeOldTime();
         Jf_.storeOldTime();
-
-        // Let the mechanical law know
-        mechanical().setRestart();
     }
 }
 

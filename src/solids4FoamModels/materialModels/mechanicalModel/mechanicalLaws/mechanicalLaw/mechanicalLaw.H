@@ -563,6 +563,12 @@ public:
         //  accordingly
         virtual void setRestart()
         {}
+
+        //- Set restart for the fields owned by this base class
+        //  Deliberately not virtual and called separately by the
+        //  mechanicalModel: setRestart is overridden by many laws and none of
+        //  them can be expected to know about the base class fields
+        void setBaseRestart();
 };
 
 

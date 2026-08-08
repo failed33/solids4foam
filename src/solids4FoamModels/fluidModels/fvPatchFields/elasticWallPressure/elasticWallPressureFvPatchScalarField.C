@@ -195,7 +195,12 @@ elasticWallPressureFvPatchScalarField::elasticWallPressureFvPatchScalarField
 
     if (dict.found("prevPressure"))
     {
-        Field<scalar>::operator=(scalarField("prevPressure", dict, p.size()));
+        prevPressure_ = scalarField("prevPressure", dict, p.size());
+    }
+
+    if (dict.found("prevAcceleration"))
+    {
+        prevAcceleration_ = vectorField("prevAcceleration", dict, p.size());
     }
 
     if (constantHs_ < SMALL)
@@ -403,9 +408,19 @@ void elasticWallPressureFvPatchScalarField::write(Ostream& os) const
     robinFvPatchScalarField::write(os);
 #ifdef OPENFOAM_ORG
     writeEntry(os, "prevPressure", prevPressure_);
+    writeEntry(os, "prevAcceleration", prevAcceleration_);
 #else
     prevPressure_.writeEntry("prevPressure", os);
+    prevAcceleration_.writeEntry("prevAcceleration", os);
 #endif
+
+    // Without this a continued run silently falls back to hs = ap*deltaT, which
+    // is a different Robin operator than the one that was running
+    if (constantHs_ > SMALL)
+    {
+        os.writeKeyword("constantHs")
+            << constantHs_ << token::END_STATEMENT << nl;
+    }
 }
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

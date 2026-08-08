@@ -692,9 +692,6 @@ nonLinGeomTotalLagTotalDispSolid::nonLinGeomTotalLagTotalDispSolid
         J_ = det(F_);
 
         gradD().storeOldTime();
-
-        // Let the mechanical law know
-        mechanical().setRestart();
     }
 
     // Check the gradScheme

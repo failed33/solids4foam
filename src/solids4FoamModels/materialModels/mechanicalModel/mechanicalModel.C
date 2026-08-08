@@ -1082,6 +1082,7 @@ void Foam::mechanicalModel::setRestart()
 
     forAll(laws, lawI)
     {
+        laws[lawI].setBaseRestart();
         laws[lawI].setRestart();
     }
 }

@@ -571,9 +571,6 @@ nonLinGeomUpdatedLagSolid::nonLinGeomUpdatedLagSolid
 
         F_.storeOldTime();
         J_.storeOldTime();
-
-        // Let the mechanical law know
-        mechanical().setRestart();
     }
 
     // Check the gradScheme
