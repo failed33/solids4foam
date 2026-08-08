@@ -18,6 +18,8 @@ License
 \*---------------------------------------------------------------------------*/
 
 #include "interfaceToInterfaceMapping.H"
+#include "polyMesh.H"
+#include "pointIOField.H"
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
@@ -44,8 +46,87 @@ Foam::interfaceToInterfaceMapping::interfaceToInterfaceMapping
     patchA_(patchA),
     patchB_(patchB),
     globalPatchA_(globalPatchA),
-    globalPatchB_(globalPatchB)
+    globalPatchB_(globalPatchB),
+    zoneARefPtr_(),
+    zoneBRefPtr_()
 {}
+
+
+// * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * * //
+
+Foam::autoPtr<Foam::standAlonePatch>
+Foam::interfaceToInterfaceMapping::makeReferenceZone
+(
+    const globalPolyPatch& gpp
+) const
+{
+    const polyMesh& mesh = gpp.mesh();
+
+    // constant/<region>/polyMesh/points is the mesh as it was generated. A
+    // moving mesh writes its current points into each time directory and
+    // leaves this one alone, so it is the reference configuration whichever
+    // motion solver is in use -- points0() only exists for the
+    // displacement-based ones
+    IOobject pointsHeader
+    (
+        "points",
+        mesh.time().constant(),
+        polyMesh::meshSubDir,
+        mesh,
+        IOobject::MUST_READ,
+        IOobject::NO_WRITE,
+        false
+    );
+
+    bool readOk = false;
+#ifdef OPENFOAM_NOT_EXTEND
+    readOk = pointsHeader.typeHeaderOk<pointIOField>(true);
+#else
+    readOk = pointsHeader.headerOk();
+#endif
+
+    if (readOk)
+    {
+        const pointIOField refPoints(pointsHeader);
+
+        if (refPoints.size() == mesh.nPoints())
+        {
+            const labelList& meshPoints = gpp.patch().meshPoints();
+
+            pointField patchRefPoints(meshPoints.size());
+            forAll(meshPoints, pointI)
+            {
+                patchRefPoints[pointI] = refPoints[meshPoints[pointI]];
+            }
+
+            return autoPtr<standAlonePatch>
+            (
+                new standAlonePatch
+                (
+                    gpp.globalPatch().localFaces(),
+                    gpp.patchPointToGlobal(patchRefPoints)()
+                )
+            );
+        }
+
+        // A topology change since the mesh was generated invalidates the point
+        // indices, so there is nothing to map through
+        WarningIn("interfaceToInterfaceMapping::makeReferenceZone(...)")
+            << "The reference mesh points hold " << refPoints.size()
+            << " points but the mesh has " << mesh.nPoints()
+            << "; building the mapping for patch " << gpp.patchName()
+            << " on the current configuration" << endl;
+    }
+    else
+    {
+        WarningIn("interfaceToInterfaceMapping::makeReferenceZone(...)")
+            << "Cannot read the reference mesh points; building the mapping "
+            << "for patch " << gpp.patchName()
+            << " on the current configuration" << endl;
+    }
+
+    return autoPtr<standAlonePatch>(new standAlonePatch(gpp.globalPatch()));
+}
 
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
@@ -144,6 +225,30 @@ void Foam::interfaceToInterfaceMapping::checkFieldSizes
             << ", toZone size: " << toZoneSize
             << abort(FatalError);
     }
+}
+
+
+const Foam::standAlonePatch&
+Foam::interfaceToInterfaceMapping::zoneARef() const
+{
+    if (zoneARefPtr_.empty())
+    {
+        zoneARefPtr_ = makeReferenceZone(globalPatchA_);
+    }
+
+    return zoneARefPtr_();
+}
+
+
+const Foam::standAlonePatch&
+Foam::interfaceToInterfaceMapping::zoneBRef() const
+{
+    if (zoneBRefPtr_.empty())
+    {
+        zoneBRefPtr_ = makeReferenceZone(globalPatchB_);
+    }
+
+    return zoneBRefPtr_();
 }
 
 

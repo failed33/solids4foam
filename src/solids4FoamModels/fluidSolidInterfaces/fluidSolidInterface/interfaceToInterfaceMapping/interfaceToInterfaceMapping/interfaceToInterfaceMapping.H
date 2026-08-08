@@ -65,8 +65,20 @@ class interfaceToInterfaceMapping
         //- Const reference to the globalPatchB
         const globalPolyPatch& globalPatchB_;
 
+        //- Reference-configuration copies of the two zones
+        mutable autoPtr<standAlonePatch> zoneARefPtr_;
+        mutable autoPtr<standAlonePatch> zoneBRefPtr_;
+
 
     // Private Member Functions
+
+        //- Return a copy of a zone with its points taken from the reference
+        //  configuration, or a copy of the zone as it stands if the reference
+        //  configuration cannot be read
+        autoPtr<standAlonePatch> makeReferenceZone
+        (
+            const globalPolyPatch& gpp
+        ) const;
 
         //- Disallow default bitwise copy construct
         interfaceToInterfaceMapping(const interfaceToInterfaceMapping&);
@@ -181,6 +193,17 @@ public:
             {
                 return globalPatchB_.globalPatch();
             };
+
+            //- Const access to zoneA in the reference configuration
+            //  The mapping is a material correspondence, so it must be built
+            //  on a configuration both zones are in at the same time. zoneA()
+            //  and zoneB() are whatever configuration their meshes currently
+            //  hold, which for a moving fluid mesh against a solid mesh that
+            //  does not move is not the same one after a restart
+            const standAlonePatch& zoneARef() const;
+
+            //- Const access to zoneB in the reference configuration
+            const standAlonePatch& zoneBRef() const;
 
             //- Check field sizes are correct before interpolation/mapping
             void checkFieldSizes
