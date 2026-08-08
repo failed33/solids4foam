@@ -215,9 +215,6 @@ unsNonLinGeomTotalLagSolid::unsNonLinGeomTotalLagSolid
         Jf_ = det(Ff_);
 
         gradD().storeOldTime();
-
-        // Let the mechanical law know
-        mechanical().setRestart();
     }
 }
 

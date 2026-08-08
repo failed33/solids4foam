@@ -308,6 +308,15 @@ void Foam::solidModel::makeMechanicalModel() const
     (
         new mechanicalModel(mesh(), nonLinGeom(), incremental())
     );
+
+    // The laws are constructed above, so this is the earliest point at which
+    // their write options can be set. Doing it here rather than in the
+    // individual solidModels means every solidModel is covered: nonLinGeom() is
+    // pure virtual, so this cannot be hoisted into the solidModel constructor
+    if (restart_)
+    {
+        mechanicalPtr_->setRestart();
+    }
 }
 
 

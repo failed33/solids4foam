@@ -1716,4 +1716,19 @@ Foam::scalar Foam::mechanicalLaw::newDeltaT()
 }
 
 
+void Foam::mechanicalLaw::setBaseRestart()
+{
+    // sigma0 is READ_IF_PRESENT from the start time, so without this it is
+    // absent from every later time and a continued run resumes a stress-free
+    // body. Unlike a solved field it cannot be recovered from anything else on
+    // disk. Only laws that use an initial stress have created it, so this stays
+    // free for everyone else. sigma0f is interpolated from sigma0 and needs no
+    // separate entry
+    if (sigma0Ptr_.valid())
+    {
+        sigma0Ptr_->writeOpt() = IOobject::AUTO_WRITE;
+    }
+}
+
+
 // ************************************************************************* //
